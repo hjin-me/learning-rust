@@ -1,6 +1,7 @@
 mod lcm;
 mod paillier;
 mod prime;
+mod mod_inverse;
 
 #[macro_use]
 extern crate uint;
@@ -55,5 +56,9 @@ mod tests {
         };
 
         assert_eq!(mul, p - 3);
+        let p = U256::from_dec_str("3")
+            .expect("p to be a good number in the example");
+        assert_eq!(p.pow(p), 27.into())
+
     }
 }

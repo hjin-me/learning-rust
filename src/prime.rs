@@ -1,4 +1,4 @@
-use num::{BigUint};
+use num_bigint::BigUint;
 use num_prime::RandPrime;
 
 pub fn gen() -> BigUint {
@@ -6,11 +6,10 @@ pub fn gen() -> BigUint {
     rng.gen_prime(256, None)
 }
 
-
 #[cfg(test)]
 mod test {
-    use num_prime::nt_funcs::is_prime;
     use super::*;
+    use num_prime::nt_funcs::is_prime;
 
     #[test]
     fn test_gen() {
