@@ -1,13 +1,14 @@
 mod lcm;
+mod mod_inverse;
 mod paillier;
 mod prime;
-mod mod_inverse;
+mod rsa_intersect;
 
 #[macro_use]
 extern crate uint;
 
 construct_uint! {
-	pub struct U256(4);
+    pub struct U256(4);
 }
 
 #[cfg(test)]
@@ -21,8 +22,10 @@ mod tests {
         // imagine the field 0..p
         // where the p is defined below
         // (it's a prime!)
-        let p = U256::from_dec_str("38873241744847760218045702002058062581688990428170398542849190507947196700873")
-            .expect("p to be a good number in the example");
+        let p = U256::from_dec_str(
+            "38873241744847760218045702002058062581688990428170398542849190507947196700873",
+        )
+        .expect("p to be a good number in the example");
 
         // then, on this field,
         // (p-1) + (p+1) = 0
@@ -56,9 +59,7 @@ mod tests {
         };
 
         assert_eq!(mul, p - 3);
-        let p = U256::from_dec_str("3")
-            .expect("p to be a good number in the example");
+        let p = U256::from_dec_str("3").expect("p to be a good number in the example");
         assert_eq!(p.pow(p), 27.into())
-
     }
 }

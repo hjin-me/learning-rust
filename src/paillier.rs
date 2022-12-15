@@ -3,11 +3,19 @@ use crate::mod_inverse::mod_inverse;
 use crate::prime;
 use num_bigint::BigUint;
 use num_traits::Pow;
-use tracing::trace;
+use tracing::{span, trace, Level};
 
-pub struct EulerParams(BigUint, BigUint, BigUint, BigUint, BigUint);
+pub struct EulerParams {
+    n: BigUint,
+    n_square: BigUint,
+    euler_n: BigUint,
+    lambda_n: BigUint,
+    g: BigUint,
+}
 
 fn euler_n() -> Result<EulerParams, Box<dyn std::error::Error>> {
+    let span = span!(Level::TRACE, "euler_n");
+    let _enter = span.enter();
     let p = prime::gen();
     // let p = BigUint::from(3u32);
     trace!("p: {}", p);
@@ -17,15 +25,15 @@ fn euler_n() -> Result<EulerParams, Box<dyn std::error::Error>> {
     let n = &p * &q;
     trace!("n: {}", n);
     let n_square = &n * &n;
-    trace!("n_square: {}", n_square);
+    trace!("n^2: {}", n_square);
     let euler_n = (&p - BigUint::from(1u8)) * (&q - BigUint::from(1u8));
-    trace!("euler_n: {}", euler_n);
+    trace!("φ(n): {}", euler_n);
     let lambda_n = lcm(&(&p - BigUint::from(1u8)), &(&q - BigUint::from(1u8)));
-    trace!("lambda_n: {}", lambda_n);
+    trace!("λ: {}", lambda_n);
     let alpha = BigUint::from(1u8);
-    trace!("alpha: {}", alpha);
+    trace!("α: {}", alpha);
     let beta = BigUint::from(1u8);
-    trace!("beta: {}", beta);
+    trace!("β: {}", beta);
 
     let bn = Pow::pow(&beta, &n);
     trace!("b^n: {}", bn);
@@ -33,10 +41,18 @@ fn euler_n() -> Result<EulerParams, Box<dyn std::error::Error>> {
     trace!("a*n+1: {}", an1);
     let g = (&bn * &an1) % &n_square;
     trace!("g = b^n*(a*n+1)%n^2: {}", g);
-    Ok(EulerParams(n, n_square, euler_n, lambda_n, g))
+    Ok(EulerParams {
+        n,
+        n_square,
+        euler_n,
+        lambda_n,
+        g,
+    })
 }
 
 fn encrypt(m: &BigUint, n: &BigUint, nn: &BigUint, g: &BigUint) -> BigUint {
+    let span = span!(Level::TRACE, "encrypt");
+    let _enter = span.enter();
     let r = prime::gen();
     trace!("r: {}", r);
     let rn = r.modpow(&n, &nn);
@@ -50,6 +66,8 @@ fn encrypt(m: &BigUint, n: &BigUint, nn: &BigUint, g: &BigUint) -> BigUint {
 }
 
 fn decrypt(cmr: &BigUint, n: &BigUint, nn: &BigUint, lambda_n: &BigUint, g: &BigUint) -> BigUint {
+    let span = span!(Level::TRACE, "decrypt");
+    let _enter = span.enter();
     let d1 = cmr.modpow(&lambda_n, &nn);
     trace!("cmr ^ lambda_n % nn: {}", d1);
     let lc: BigUint = (d1 + 1u8) / n;
@@ -72,16 +90,13 @@ mod test {
 
     #[test]
     fn test_euler_n() {
-        let subscriber = tracing_subscriber::FmtSubscriber::builder()
-            // all spans/events with a level higher than TRACE (e.g, debug, info, warn, etc.)
-            // will be written to stdout.
-            .with_max_level(Level::TRACE)
-            // completes the builder.
-            .finish();
-
-        tracing::subscriber::set_global_default(subscriber)
-            .expect("setting default subscriber failed");
-        let EulerParams(n, nn, en, ln, g) = euler_n().unwrap();
+        let EulerParams {
+            n,
+            n_square: nn,
+            euler_n: en,
+            lambda_n: ln,
+            g,
+        } = euler_n().unwrap();
         println!("{:?}, {:?}, {:?}, {:?}, {:?}", n, nn, en, ln, g);
     }
     #[test]
@@ -96,10 +111,18 @@ mod test {
         tracing::subscriber::set_global_default(subscriber)
             .expect("setting default subscriber failed");
 
-        let EulerParams(n, nn, _, ln, g) = euler_n().unwrap();
+        let EulerParams {
+            n,
+            n_square: nn,
+            euler_n: _,
+            lambda_n: ln,
+            g,
+        } = euler_n().unwrap();
         let cmr = encrypt(&BigUint::from(6u8), &n, &nn, &g);
-        let r = decrypt(&cmr, &n, &nn, &ln, &g);
-        assert_eq!(r, BigUint::from(6u8));
+        let cmr2 = encrypt(&BigUint::from(6u8), &n, &nn, &g);
+        assert_ne!(cmr, cmr2);
+        assert_eq!(decrypt(&cmr, &n, &nn, &ln, &g), BigUint::from(6u8));
+        assert_eq!(decrypt(&cmr2, &n, &nn, &ln, &g), BigUint::from(6u8));
 
         // add
         let a = BigUint::from(10u8);
