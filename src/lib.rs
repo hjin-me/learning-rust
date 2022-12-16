@@ -1,3 +1,4 @@
+mod diffie_hellman;
 mod lcm;
 mod mod_inverse;
 mod paillier;
