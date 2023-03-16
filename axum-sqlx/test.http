@@ -1,0 +1,13 @@
+GET http://127.0.0.1:3000/list_all
+Accept: application/json
+
+###
+GET http://127.0.0.1:3000/liveness
+
+###
+POST http://127.0.0.1:3000/add_todo
+Content-Type: application/json
+
+{
+    "description": "Buy milk from the store"
+}
